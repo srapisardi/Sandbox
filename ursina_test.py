@@ -9,7 +9,7 @@ window.exit_button.visible = True
 window.fullscreen = True
 
 
-# Create a simple terrain #
+# Create a simple terrain ##
 class Terrain(Entity):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
