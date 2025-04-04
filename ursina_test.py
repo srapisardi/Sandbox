@@ -1,59 +1,67 @@
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
-from ursina.shaders import lit_with_shadows_shader
 
 app = Ursina()
 
-window.fps_counter.enabled = True
+# --- Window Config ---
+window.title = 'Ursina FPS Starter'
+window.borderless = False
+window.fullscreen = False
 window.exit_button.visible = True
-window.fullscreen = True
+window.fps_counter.enabled = True
 
+# --- Environment / Terrain ---
+ground = Entity(
+    model='plane',
+    texture='white_cube',
+    texture_scale=(20, 20),
+    collider='box',
+    scale=(40, 1, 40),
+    color=color.gray
+)
 
-# Create a simple terrain
-class Terrain(Entity):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.model = 'plane'
-        self.texture = 'grass'
-        self.scale = 10
-        self.collider = 'mesh'
-        self.shader = lit_with_shadows_shader
-        self.color = color.green
+# --- Sky ---
+sky = Sky()
 
+# --- Player ---
+player = FirstPersonController()
+player.gravity = 1
+player.jump_height = 1.5
+player.speed = 5
+player.cursor.visible = True
 
-# Create a player controller
-class Player(FirstPersonController):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.speed = 5
-        self.jump_height = 2
-        self.gravity = 1.5
-        self.collider = 'box'
-        self.model = 'cube'
-        self.color = color.orange
+# --- Gun (Fake UI-only) ---
+gun = Entity(
+    parent=camera.ui,
+    model='cube',
+    color=color.azure,
+    scale=(0.2, 0.1, 1),
+    position=(0.2, -0.1),
+    rotation=(0, -5, 0)
+)
 
+# --- Shoot Logic ---
+def input(key):
+    if key == 'left mouse down':
+        shoot()
 
-# Create a simple enemy
-class Enemy(Entity):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.model = 'cube'
-        self.color = color.red
-        self.scale = 0.5
-        self.collider = 'box'
-        self.position = (2, 0, 2)
-        self.speed = 2
+def shoot():
+    bullet = Entity(
+        model='sphere',
+        color=color.yellow,
+        scale=0.1,
+        position=player.position + camera.forward * 1.5,
+        collider='sphere'
+    )
+    bullet.direction = camera.forward
+    bullet.speed = 20
 
-    def update(self):
-        # Simple AI to move towards the player
-        if distance(self.position, player.position) < 5:
-            direction = (player.position - self.position).normalized()
-            self.position += direction * self.speed * time.dt
-            
+    def update_bullet():
+        bullet.position += bullet.direction * bullet.speed * time.dt
+        if distance(bullet.position, player.position) > 50:
+            destroy(bullet)
 
+    bullet.update = update_bullet
 
-
-# Create the game world
-terrain = Terrain()
-player = Player()
-enemy = Enemy()
+# --- Run Game ---
+app.run()
